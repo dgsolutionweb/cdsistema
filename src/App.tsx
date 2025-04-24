@@ -11,6 +11,8 @@ import { Clientes } from './pages/Clientes'
 import { Loader2 } from 'lucide-react'
 import { PDV } from './pages/PDV'
 import { Vendas } from './pages/Vendas'
+import { Caixa } from './pages/Caixa'
+import { Relatorios } from './pages/Relatorios'
 
 // Componente de loading
 function LoadingScreen() {
@@ -44,11 +46,7 @@ function PrivateRoute({ children, requireSuperAdmin = false }: { children: React
   return <>{children}</>
 }
 
-// Páginas temporárias para desenvolvimento
-function Relatorios() {
-  return <h1>Relatórios</h1>
-}
-
+// Página temporária para desenvolvimento
 function Configuracoes() {
   return <h1>Configurações</h1>
 }
@@ -124,6 +122,17 @@ export function App() {
               <PrivateRoute>
                 <DashboardLayout>
                   <Vendas />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/caixa"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <Caixa />
                 </DashboardLayout>
               </PrivateRoute>
             }

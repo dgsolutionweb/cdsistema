@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   UserCog,
-  Receipt
+  Receipt,
+  DollarSign
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -63,6 +64,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     { icon: <Users size={20} />, text: 'Clientes', path: '/clientes' },
     { icon: <ShoppingCart size={20} />, text: 'PDV', path: '/pdv' },
     { icon: <Receipt size={20} />, text: 'Vendas', path: '/vendas' },
+    { icon: <DollarSign size={20} />, text: 'Caixa', path: '/caixa' },
     { icon: <BarChart2 size={20} />, text: 'Relatórios', path: '/relatorios' },
     { icon: <Settings size={20} />, text: 'Configurações', path: '/configuracoes' },
     ...(user?.role === 'superadmin' ? [

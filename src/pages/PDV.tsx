@@ -42,7 +42,6 @@ interface Caixa {
   data_abertura: string
   data_fechamento: string | null
   status: 'aberto' | 'fechado'
-  observacao: string | null
   created_at: string
   usuario_nome: string
 }
