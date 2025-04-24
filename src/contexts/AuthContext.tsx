@@ -10,6 +10,7 @@ export interface AuthUser {
   }
   role: 'user' | 'admin' | 'superadmin'
   status: 'pendente' | 'ativo' | 'bloqueado'
+  empresa_id: string
 }
 
 interface AuthContextType {
@@ -30,6 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         updateUserData(session.user)
+      } else {
+        setLoading(false)
       }
     })
 
@@ -39,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateUserData(session.user)
       } else {
         setUser(null)
+        setLoading(false)
       }
     })
 
@@ -46,61 +50,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateUserData = async (authUser: User) => {
-    // Buscar dados adicionais do usuário do banco
-    const { data: userData, error } = await supabase
-      .from('usuarios')
-      .select('role, status')
-      .eq('id', authUser.id)
-      .single()
+    try {
+      // Buscar dados adicionais do usuário do banco
+      const { data: userData, error } = await supabase
+        .from('usuarios')
+        .select('role, status, empresa_id')
+        .eq('id', authUser.id)
+        .single()
 
-    if (error) {
-      console.error('Erro ao buscar dados do usuário:', error)
-      return
+      if (error) {
+        console.error('Erro ao buscar dados do usuário:', error)
+        setLoading(false)
+        return
+      }
+
+      setUser({
+        id: authUser.id,
+        email: authUser.email!,
+        user_metadata: {
+          name: authUser.user_metadata.name || ''
+        },
+        role: userData.role,
+        status: userData.status,
+        empresa_id: userData.empresa_id
+      })
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error)
+    } finally {
+      setLoading(false)
     }
-
-    setUser({
-      id: authUser.id,
-      email: authUser.email!,
-      user_metadata: {
-        name: authUser.user_metadata.name || ''
-      },
-      role: userData.role,
-      status: userData.status
-    })
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data: { user }, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      setLoading(true)
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
 
-    if (error) throw error
-    if (!user) throw new Error('No user found')
+      if (error) throw error
+      if (!user) throw new Error('No user found')
 
-    // Verificar status do usuário
-    const { data: userData, error: userError } = await supabase
-      .from('usuarios')
-      .select('status, role')
-      .eq('id', user.id)
-      .single()
+      // Verificar status do usuário
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('status, role')
+        .eq('id', user.id)
+        .single()
 
-    if (userError) throw userError
+      if (userError) throw userError
 
-    if (userData.status === 'pendente') {
-      await signOut()
-      throw new Error('Usuário pendente de aprovação')
-    }
+      if (userData.status === 'pendente') {
+        await signOut()
+        throw new Error('Usuário pendente de aprovação')
+      }
 
-    if (userData.status === 'bloqueado') {
-      await signOut()
-      throw new Error('Usuário bloqueado')
+      if (userData.status === 'bloqueado') {
+        await signOut()
+        throw new Error('Usuário bloqueado')
+      }
+    } catch (error) {
+      throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    try {
+      setLoading(true)
+      await supabase.auth.signOut()
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const value = {

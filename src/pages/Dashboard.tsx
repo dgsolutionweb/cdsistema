@@ -97,95 +97,49 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">C&D Sistemas</h1>
-            
-            <div className="flex items-center space-x-4">
-              {/* Notificações */}
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell className="h-5 w-5 text-gray-600" />
-              </button>
-              
-              {/* Menu do usuário */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100"
-                >
-                  <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user?.name?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-gray-600" />
-                </button>
+      {/* Grid de cards de resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <SummaryCard
+          title="Total de Clientes"
+          value="156"
+          icon={Users}
+          color="bg-blue-500"
+        />
+        <SummaryCard
+          title="Vendas do Mês"
+          value="32"
+          icon={ShoppingCart}
+          color="bg-green-500"
+        />
+        <SummaryCard
+          title="Faturamento"
+          value="R$ 24.550,00"
+          icon={DollarSign}
+          color="bg-yellow-500"
+        />
+        <SummaryCard
+          title="Produtos"
+          value="89"
+          icon={Package}
+          color="bg-purple-500"
+        />
+      </div>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sair
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* Seção de gráficos e atividades */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Área para gráficos (2/3 do espaço) */}
+        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Visão Geral das Vendas</h3>
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
+            <p className="text-gray-500">Gráfico de vendas será implementado aqui</p>
           </div>
         </div>
-      </header>
 
-      {/* Conteúdo principal */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Grid de cards de resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <SummaryCard
-            title="Total de Clientes"
-            value="156"
-            icon={Users}
-            color="bg-blue-500"
-          />
-          <SummaryCard
-            title="Vendas do Mês"
-            value="32"
-            icon={ShoppingCart}
-            color="bg-green-500"
-          />
-          <SummaryCard
-            title="Faturamento"
-            value="R$ 24.550,00"
-            icon={DollarSign}
-            color="bg-yellow-500"
-          />
-          <SummaryCard
-            title="Produtos"
-            value="89"
-            icon={Package}
-            color="bg-purple-500"
-          />
+        {/* Atividades recentes (1/3 do espaço) */}
+        <div className="lg:col-span-1">
+          <RecentActivity />
         </div>
-
-        {/* Seção de gráficos e atividades */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Área para gráficos (2/3 do espaço) */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Visão Geral das Vendas</h3>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
-              <p className="text-gray-500">Gráfico de vendas será implementado aqui</p>
-            </div>
-          </div>
-
-          {/* Atividades recentes (1/3 do espaço) */}
-          <div className="lg:col-span-1">
-            <RecentActivity />
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   )
 } 

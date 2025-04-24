@@ -11,7 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  UserCog
+  UserCog,
+  Receipt
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -61,6 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     { icon: <Package size={20} />, text: 'Produtos', path: '/produtos' },
     { icon: <Users size={20} />, text: 'Clientes', path: '/clientes' },
     { icon: <ShoppingCart size={20} />, text: 'PDV', path: '/pdv' },
+    { icon: <Receipt size={20} />, text: 'Vendas', path: '/vendas' },
     { icon: <BarChart2 size={20} />, text: 'Relatórios', path: '/relatorios' },
     { icon: <Settings size={20} />, text: 'Configurações', path: '/configuracoes' },
     ...(user?.role === 'superadmin' ? [
@@ -95,12 +97,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
 
-            <div className="absolute bottom-0 w-full p-4">
+            <div className="fixed bottom-0 left-0 w-64 p-4 bg-white border-t">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSignOut}
-                className="flex items-center space-x-3 text-gray-600 hover:text-red-500 w-full px-4 py-3 rounded-lg"
+                className="flex items-center space-x-3 text-gray-600 hover:text-red-500 w-full px-4 py-3 rounded-lg hover:bg-gray-50"
               >
                 <LogOut size={20} />
                 <span className="font-medium">Sair</span>

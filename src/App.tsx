@@ -5,13 +5,31 @@ import { Cadastro } from './pages/Cadastro'
 import { GestaoUsuarios } from './pages/GestaoUsuarios'
 import { DashboardLayout } from './components/DashboardLayout'
 import { useAuth } from './contexts/AuthContext'
+import { Dashboard } from './pages/Dashboard'
+import { Produtos } from './pages/Produtos'
+import { Clientes } from './pages/Clientes'
+import { Loader2 } from 'lucide-react'
+import { PDV } from './pages/PDV'
+import { Vendas } from './pages/Vendas'
+
+// Componente de loading
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto" />
+        <p className="mt-2 text-sm text-gray-600">Carregando...</p>
+      </div>
+    </div>
+  )
+}
 
 // Componente de proteção de rota
 function PrivateRoute({ children, requireSuperAdmin = false }: { children: React.ReactNode, requireSuperAdmin?: boolean }) {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <div>Carregando...</div>
+    return <LoadingScreen />
   }
 
   if (!user) {
@@ -27,22 +45,6 @@ function PrivateRoute({ children, requireSuperAdmin = false }: { children: React
 }
 
 // Páginas temporárias para desenvolvimento
-function Dashboard() {
-  return <h1>Dashboard</h1>
-}
-
-function Produtos() {
-  return <h1>Produtos</h1>
-}
-
-function Clientes() {
-  return <h1>Clientes</h1>
-}
-
-function PDV() {
-  return <h1>PDV</h1>
-}
-
 function Relatorios() {
   return <h1>Relatórios</h1>
 }
@@ -111,6 +113,17 @@ export function App() {
               <PrivateRoute>
                 <DashboardLayout>
                   <PDV />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/vendas"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <Vendas />
                 </DashboardLayout>
               </PrivateRoute>
             }
