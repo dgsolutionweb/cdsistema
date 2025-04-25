@@ -84,7 +84,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             className="w-64 bg-white shadow-lg"
           >
             <div className="p-4">
-              <h1 className="text-2xl font-bold text-indigo-600">SGC</h1>
+              <h1 className="text-2xl font-bold text-indigo-600">C&D Sistemas</h1>
             </div>
 
             <nav className="mt-8 px-2 space-y-1">

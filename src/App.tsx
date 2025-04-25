@@ -13,6 +13,7 @@ import { PDV } from './pages/PDV'
 import { Vendas } from './pages/Vendas'
 import { Caixa } from './pages/Caixa'
 import { Relatorios } from './pages/Relatorios'
+import Configuracoes from './pages/Configuracoes'
 
 // Componente de loading
 function LoadingScreen() {
@@ -47,13 +48,13 @@ function PrivateRoute({ children, requireSuperAdmin = false }: { children: React
 }
 
 // Página temporária para desenvolvimento
-function Configuracoes() {
-  return <h1>Configurações</h1>
-}
+// function Configuracoes() {
+//   return <h1>Configurações</h1>
+// }
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/cdsistemas">
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

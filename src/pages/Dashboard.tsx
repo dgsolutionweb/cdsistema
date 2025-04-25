@@ -259,9 +259,9 @@ function StockAlerts({ produtos }: { produtos: EstoqueAlerta[] }) {
       
       <div className="space-y-4">
         {produtos.length > 0 ? (
-          produtos.map((produto, index) => (
+          produtos.map((produto) => (
             <motion.div 
-              key={`estoque-${produto.id}-${index}`} 
+              key={produto.id} 
               className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
               whileHover={{ scale: 1.01, backgroundColor: 'rgba(249, 250, 251, 1)' }}
             >
@@ -309,7 +309,7 @@ function StockAlerts({ produtos }: { produtos: EstoqueAlerta[] }) {
 }
 
 // Componente para os produtos mais vendidos
-function TopProducts({ produtos }: { produtos: ProdutoMaisVendido[] }) {
+function TopProducts({ produtos }: { produtos: (ProdutoMaisVendido & { uniqueKey?: string })[] }) {
   const navigate = useNavigate();
   
   return (
@@ -328,9 +328,9 @@ function TopProducts({ produtos }: { produtos: ProdutoMaisVendido[] }) {
       
       <div className="space-y-4">
         {produtos.length > 0 ? (
-          produtos.map((produto) => (
+          produtos.map((produto, index) => (
             <motion.div 
-              key={produto.id} 
+              key={produto.uniqueKey || `produto-${produto.id}-${index}`}
               className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
               whileHover={{ scale: 1.01, backgroundColor: 'rgba(249, 250, 251, 1)' }}
               onClick={() => navigate(`/produtos`, { state: { visualizarProduto: produto.id } })}
@@ -362,7 +362,7 @@ function TopProducts({ produtos }: { produtos: ProdutoMaisVendido[] }) {
 }
 
 // Componente para os clientes destaque
-function TopCustomers({ clientes }: { clientes: ClienteDestaque[] }) {
+function TopCustomers({ clientes }: { clientes: (ClienteDestaque & { uniqueKey?: string })[] }) {
   const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
@@ -393,9 +393,9 @@ function TopCustomers({ clientes }: { clientes: ClienteDestaque[] }) {
       
       <div className="space-y-4">
         {clientes.length > 0 ? (
-          clientes.map((cliente) => (
+          clientes.map((cliente, index) => (
             <motion.div 
-              key={cliente.id} 
+              key={cliente.uniqueKey || `cliente-${cliente.id}-${index}`}
               className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
               whileHover={{ scale: 1.01, backgroundColor: 'rgba(249, 250, 251, 1)' }}
               onClick={() => navigate(`/clientes`, { state: { visualizarCliente: cliente.id } })}
@@ -534,7 +534,7 @@ function PaymentMethodsChart({ data }: { data: VendasPorFormaPagamento }) {
               labelLine={false}
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell key={`cell-${entry.name}-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(value) => formatCurrency(value as number)} />
@@ -543,7 +543,7 @@ function PaymentMethodsChart({ data }: { data: VendasPorFormaPagamento }) {
         
         <div className="grid grid-cols-3 gap-2 mt-4 w-full">
           {chartData.map((entry, index) => (
-            <div key={index} className="flex items-center text-xs">
+            <div key={`legend-${entry.name}-${index}`} className="flex items-center text-xs">
               <div 
                 className="w-3 h-3 mr-2 rounded-full" 
                 style={{ backgroundColor: COLORS[index % COLORS.length] }} 
@@ -572,8 +572,8 @@ export function Dashboard() {
     produtosBaixoEstoque: 0
   })
   const [vendasRecentes, setVendasRecentes] = useState<VendaRecente[]>([])
-  const [produtosMaisVendidos, setProdutosMaisVendidos] = useState<ProdutoMaisVendido[]>([])
-  const [clientesDestaque, setClientesDestaque] = useState<ClienteDestaque[]>([])
+  const [produtosMaisVendidos, setProdutosMaisVendidos] = useState<(ProdutoMaisVendido & { uniqueKey?: string })[]>([])
+  const [clientesDestaque, setClientesDestaque] = useState<(ClienteDestaque & { uniqueKey?: string })[]>([])
   const [produtosBaixoEstoque, setProdutosBaixoEstoque] = useState<EstoqueAlerta[]>([])
   const [vendasPorFormaPagamento, setVendasPorFormaPagamento] = useState<VendasPorFormaPagamento>({
     dinheiro: 0,
@@ -728,7 +728,13 @@ export function Dashboard() {
       
       if (error) throw error
       
-      setProdutosMaisVendidos(data || [])
+      // Adicionar um índice único para cada produto
+      const produtosComIndice = (data || []).map((produto, index) => ({
+        ...produto,
+        uniqueKey: `${produto.id}-${index}`
+      }))
+      
+      setProdutosMaisVendidos(produtosComIndice)
     } catch (error) {
       console.error('Erro ao carregar produtos mais vendidos:', error)
     }
@@ -748,7 +754,13 @@ export function Dashboard() {
       
       if (error) throw error
       
-      setClientesDestaque(data || [])
+      // Adicionar um índice único para cada cliente
+      const clientesComIndice = (data || []).map((cliente, index) => ({
+        ...cliente,
+        uniqueKey: `${cliente.id}-${index}`
+      }))
+      
+      setClientesDestaque(clientesComIndice)
     } catch (error) {
       console.error('Erro ao carregar melhores clientes:', error)
     }

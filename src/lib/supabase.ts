@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database.types'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vlckfgskenwwyxlofrbp.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsY2tmZ3NrZW53d3l4bG9mcmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0NTIwNzAsImV4cCI6MjA2MTAyODA3MH0.-nsgW7MfwC8OkeiATdrTPMeY91OOwRNEf4d2gYnMiG4'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Variáveis de ambiente do Supabase não configuradas corretamente.');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Hook personalizado para autenticação
 export const useSupabaseAuth = () => {
