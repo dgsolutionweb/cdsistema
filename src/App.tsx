@@ -1,170 +1,182 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
-import { Login } from './pages/Login'
-import { Cadastro } from './pages/Cadastro'
-import { GestaoUsuarios } from './pages/GestaoUsuarios'
-import { DashboardLayout } from './components/DashboardLayout'
-import { useAuth } from './contexts/AuthContext'
-import { Dashboard } from './pages/Dashboard'
-import { Produtos } from './pages/Produtos'
-import { Clientes } from './pages/Clientes'
-import { Loader2 } from 'lucide-react'
-import { PDV } from './pages/PDV'
-import { Vendas } from './pages/Vendas'
-import { Caixa } from './pages/Caixa'
-import { Relatorios } from './pages/Relatorios'
+import { useState, useEffect } from 'react'
+import { createBrowserRouter, RouterProvider, redirect, useRouteError, isRouteErrorResponse, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import Login from './pages/Login'
+import Cadastro from './pages/Cadastro'
+import Dashboard from './pages/Dashboard'
+import Produtos from './pages/Produtos'
+import Clientes from './pages/Clientes'
+import Vendas from './pages/Vendas'
+import PDV from './pages/PDV'
+import Caixa from './pages/Caixa'
+import Relatorios from './pages/Relatorios'
 import Configuracoes from './pages/Configuracoes'
+import GestaoUsuarios from './pages/GestaoUsuarios'
 
-// Componente de loading
-function LoadingScreen() {
+// Página de erro
+function ErrorPage() {
+  const error = useRouteError();
+  let errorMessage: string;
+
+  if (isRouteErrorResponse(error)) {
+    errorMessage = `${error.status} - ${error.statusText || error.data}`;
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === 'string') {
+    errorMessage = error;
+  } else {
+    errorMessage = 'Ocorreu um erro desconhecido';
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto" />
-        <p className="mt-2 text-sm text-gray-600">Carregando...</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
+      <h1 className="text-4xl font-bold text-red-600 mb-4">Ops!</h1>
+      <p className="text-gray-700 text-lg mb-6">Desculpe, ocorreu um erro inesperado.</p>
+      <p className="bg-gray-100 p-3 rounded-md text-gray-600 max-w-md break-words text-sm">
+        {errorMessage}
+      </p>
+      <button 
+        onClick={() => window.location.href = '/'}
+        className="mt-8 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+      >
+        Voltar para a página inicial
+      </button>
     </div>
-  )
+  );
 }
 
-// Componente de proteção de rota
-function PrivateRoute({ children, requireSuperAdmin = false }: { children: React.ReactNode, requireSuperAdmin?: boolean }) {
-  const { user, loading } = useAuth()
-
+// Componente de autenticação para proteger rotas
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  
+  // Se ainda está carregando, mostra um loader
   if (loading) {
-    return <LoadingScreen />
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
   }
-
+  
+  // Se não há usuário autenticado, redireciona para login
   if (!user) {
-    return <Navigate to="/login" />
+    return <Navigate to="/login" replace />;
   }
-
-  // Verificar se o usuário é superadmin quando necessário
-  if (requireSuperAdmin && user.role !== 'superadmin') {
-    return <Navigate to="/dashboard" />
-  }
-
-  return <>{children}</>
+  
+  return <>{children}</>;
 }
 
-// Página temporária para desenvolvimento
-// function Configuracoes() {
-//   return <h1>Configurações</h1>
-// }
+// Rotas da aplicação
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Login />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/login',
+    element: <Login />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/cadastro',
+    element: <Cadastro />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/dashboard',
+    element: (
+      <RequireAuth>
+        <Dashboard />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/produtos',
+    element: (
+      <RequireAuth>
+        <Produtos />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/clientes',
+    element: (
+      <RequireAuth>
+        <Clientes />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/vendas',
+    element: (
+      <RequireAuth>
+        <Vendas />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/pdv',
+    element: (
+      <RequireAuth>
+        <PDV />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/caixa',
+    element: (
+      <RequireAuth>
+        <Caixa />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/relatorios',
+    element: (
+      <RequireAuth>
+        <Relatorios />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/configuracoes',
+    element: (
+      <RequireAuth>
+        <Configuracoes />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/usuarios',
+    element: (
+      <RequireAuth>
+        <GestaoUsuarios />
+      </RequireAuth>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '*',
+    element: <ErrorPage />
+  }
+], {
+  // Usar o basename se a URL contém /cdsistemas/
+  basename: window.location.pathname.includes('/cdsistemas') ? '/cdsistemas' : undefined
+});
 
-export function App() {
+export default function App() {
   return (
-    <BrowserRouter basename="/cdsistemas">
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          
-          {/* Rota de Gestão de Usuários (apenas superadmin) */}
-          <Route
-            path="/usuarios"
-            element={
-              <PrivateRoute requireSuperAdmin>
-                <DashboardLayout>
-                  <GestaoUsuarios />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          {/* Rotas protegidas */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/produtos"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Produtos />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/clientes"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Clientes />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/pdv"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <PDV />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/vendas"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Vendas />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/caixa"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Caixa />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/relatorios"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Relatorios />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/configuracoes"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <Configuracoes />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          
-          {/* Redireciona para o dashboard por padrão */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  )
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }

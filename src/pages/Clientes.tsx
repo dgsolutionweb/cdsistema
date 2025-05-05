@@ -66,7 +66,7 @@ function AlertMessage({ type, message }: Alert) {
   )
 }
 
-export function Clientes() {
+export default function Clientes() {
   const { user } = useAuth()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)

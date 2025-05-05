@@ -14,7 +14,7 @@ interface FormData {
   empresa_endereco: string;
 }
 
-export function Cadastro() {
+export default function Cadastro() {
   const navigate = useNavigate();
   const { signUp } = useSupabaseAuth();
   const [formData, setFormData] = useState<FormData>({

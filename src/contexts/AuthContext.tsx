@@ -1,16 +1,16 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { Database } from '../types/database.types'
 
 export interface AuthUser {
   id: string
   email: string
-  user_metadata: {
-    name: string
-  }
-  role: 'user' | 'admin' | 'superadmin'
+  nome: string
+  tipo: 'super_admin' | 'admin_empresa' | 'operador'
   status: 'pendente' | 'ativo' | 'bloqueado'
-  empresa_id: string
+  empresa_id: string | null
+  avatar_url?: string | null
 }
 
 interface AuthContextType {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Buscar dados adicionais do usuário do banco
       const { data: userData, error } = await supabase
         .from('usuarios')
-        .select('role, status, empresa_id')
+        .select('nome, tipo, status, empresa_id, avatar_url')
         .eq('id', authUser.id)
         .single()
 
@@ -67,12 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         id: authUser.id,
         email: authUser.email!,
-        user_metadata: {
-          name: authUser.user_metadata.name || ''
-        },
-        role: userData.role,
+        nome: userData.nome,
+        tipo: userData.tipo,
         status: userData.status,
-        empresa_id: userData.empresa_id
+        empresa_id: userData.empresa_id,
+        avatar_url: userData.avatar_url
       })
     } catch (error) {
       console.error('Erro ao atualizar dados do usuário:', error)
@@ -90,12 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) throw error
-      if (!user) throw new Error('No user found')
+      if (!user) throw new Error('Usuário não encontrado')
 
       // Verificar status do usuário
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
-        .select('status, role')
+        .select('status, tipo')
         .eq('id', user.id)
         .single()
 

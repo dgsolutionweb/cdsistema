@@ -46,7 +46,7 @@ interface ResumoVendas {
   crediario: number
 }
 
-export function Caixa() {
+export default function Caixa() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [savingOpen, setSavingOpen] = useState(false)

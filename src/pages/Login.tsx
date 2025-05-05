@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
 import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 function Alert({ message, type = 'error' }: { message: string, type?: 'error' | 'warning' | 'success' }) {
   const colors = {
@@ -21,11 +22,12 @@ function Alert({ message, type = 'error' }: { message: string, type?: 'error' | 
   )
 }
 
-export function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function Login() {
+  const [email, setEmail] = useState('novo@admin.com')
+  const [password, setPassword] = useState('Admin2025')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [detailedError, setDetailedError] = useState<any>(null)
   
   const navigate = useNavigate()
   const { signIn } = useAuth()
@@ -33,20 +35,35 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setDetailedError(null)
     setLoading(true)
 
     try {
+      // Testa diretamente com a API do Supabase para ver detalhes do erro
+      const resposta = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (resposta.error) {
+        // Armazenar o erro detalhado para visualização
+        console.error('Erro detalhado:', resposta.error)
+        setDetailedError(resposta.error)
+        throw resposta.error
+      }
+
+      // Se chegou aqui, login funcionou, continue com fluxo normal
       await signIn(email, password)
-      navigate('/dashboard')
+      navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      if (err.message.includes('pendente')) {
+      if (err.message?.includes('pendente')) {
         setError('Sua conta está pendente de aprovação. Por favor, aguarde o administrador ativar seu acesso.')
-      } else if (err.message.includes('bloqueado')) {
+      } else if (err.message?.includes('bloqueado')) {
         setError('Sua conta está bloqueada. Entre em contato com o administrador do sistema.')
-      } else if (err.message.includes('Invalid login credentials')) {
+      } else if (err.message?.includes('Invalid login credentials')) {
         setError('Email ou senha incorretos.')
       } else {
-        setError('Ocorreu um erro ao fazer login. Por favor, tente novamente.')
+        setError(`Ocorreu um erro ao fazer login: ${err.message || 'Erro desconhecido'}`)
       }
     } finally {
       setLoading(false)
@@ -105,6 +122,13 @@ export function Login() {
 
           {error && (
             <Alert message={error} type="error" />
+          )}
+
+          {detailedError && (
+            <div className="bg-gray-100 p-4 rounded text-xs overflow-auto max-h-32">
+              <p className="font-semibold">Detalhes do erro (para debug):</p>
+              <pre>{JSON.stringify(detailedError, null, 2)}</pre>
+            </div>
           )}
 
           <div>

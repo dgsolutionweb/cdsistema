@@ -21,7 +21,8 @@ import {
   ArrowRight,
   Loader2,
   BarChart2,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -43,6 +44,9 @@ import {
 } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
+import { DashboardLayout } from '../components/DashboardLayout'
+import { DatePicker } from '../components/DatePicker'
+import { useDashboard } from '../lib/supabase'
 
 // Interfaces dos dados
 interface DashboardStats {
@@ -102,6 +106,11 @@ interface EvolucaoVendas {
   total_vendas: number
   valor_total: number
 }
+
+const CORES = [
+  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', 
+  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+];
 
 // Componente para os cards de resumo
 function SummaryCard({ title, value, icon: Icon, color, trend, trendValue, info }: {
@@ -558,7 +567,7 @@ function PaymentMethodsChart({ data }: { data: VendasPorFormaPagamento }) {
 }
 
 // Componente principal do Dashboard
-export function Dashboard() {
+export default function Dashboard() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats>({
@@ -584,6 +593,75 @@ export function Dashboard() {
   })
   const [evolucaoVendas, setEvolucaoVendas] = useState<EvolucaoVendas[]>([])
 
+  // Estado do filtro de datas
+  const [dataInicio, setDataInicio] = useState<Date>(startOfMonth(new Date()));
+  const [dataFim, setDataFim] = useState<Date>(endOfMonth(new Date()));
+  
+  // Formatação de datas para a API
+  const dataInicioFormatada = format(dataInicio, 'yyyy-MM-dd');
+  const dataFimFormatada = format(dataFim, 'yyyy-MM-dd');
+  
+  // Carregar dados do dashboard
+  const { useDadosDashboard } = useDashboard();
+  const { data, isLoading, isError } = useDadosDashboard(
+    user?.empresa_id || '',
+    dataInicioFormatada,
+    dataFimFormatada
+  );
+  
+  // Formatar dados para os gráficos
+  const formatarDadosEvolucaoVendas = () => {
+    if (!data?.evolucaoVendas) return [];
+    
+    return data.evolucaoVendas.map(venda => ({
+      data: format(new Date(venda.data!), 'dd/MM'),
+      vendas: venda.total_vendas,
+      valor: venda.valor_total,
+    }));
+  };
+  
+  const formatarDadosVendasPorPagamento = () => {
+    if (!data?.vendasPorPagamento) return [];
+    
+    return data.vendasPorPagamento.map(item => ({
+      name: 
+        item.forma_pagamento === 'dinheiro' ? 'Dinheiro' :
+        item.forma_pagamento === 'cartao' ? 'Cartão' :
+        item.forma_pagamento === 'pix' ? 'PIX' : 
+        item.forma_pagamento,
+      value: Number(item.valor_total),
+    }));
+  };
+  
+  // Calcular totais
+  const calcularTotalVendas = () => {
+    if (!data?.resumoVendas) return 0;
+    return data.resumoVendas.reduce((acc, item) => acc + Number(item.total_vendas || 0), 0);
+  };
+  
+  const calcularValorTotal = () => {
+    if (!data?.resumoVendas) return 0;
+    return data.resumoVendas.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
+  };
+  
+  const calcularTicketMedio = () => {
+    const totalVendas = calcularTotalVendas();
+    const valorTotal = calcularValorTotal();
+    
+    if (totalVendas === 0) return 0;
+    return valorTotal / totalVendas;
+  };
+  
+  const totalClientesComCompras = () => {
+    if (!data?.clientesDestaque) return 0;
+    return data.clientesDestaque.length;
+  };
+  
+  const totalProdutosBaixoEstoque = () => {
+    if (!data?.produtosEstoqueBaixo) return 0;
+    return data.produtosEstoqueBaixo.length;
+  };
+  
   // Função para carregar estatísticas do dashboard
   async function loadDashboardStats() {
     setLoading(true)
@@ -884,82 +962,295 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando dados do dashboard...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
+  if (isError) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            <p className="flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Ocorreu um erro ao carregar os dados do dashboard. Tente novamente mais tarde.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
-        <p className="text-gray-500">Resumo dos principais indicadores do seu negócio</p>
-      </div>
-      
-      {/* Grid de cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard
-          title="Total de Clientes"
-          value={stats.clientesTotal}
-          icon={Users}
-          color="bg-blue-500"
-          info="Base de clientes cadastrados"
-        />
-        <SummaryCard
-          title="Vendas do Mês"
-          value={stats.vendasMes}
-          icon={ShoppingCart}
-          color="bg-green-500"
-          trend="up"
-          trendValue={`${stats.vendasHoje} hoje`}
-          info={`${formatCurrency(stats.faturamentoMes)} em vendas`}
-        />
-        <SummaryCard
-          title="Faturamento de Hoje"
-          value={formatCurrency(stats.faturamentoHoje)}
-          icon={DollarSign}
-          color="bg-amber-500"
-          info={`Ticket médio: ${formatCurrency(stats.ticketMedio)}`}
-        />
-        <SummaryCard
-          title="Estoque Crítico"
-          value={stats.produtosBaixoEstoque}
-          icon={AlertTriangle}
-          color="bg-red-500"
-          trend={stats.produtosBaixoEstoque > 0 ? 'down' : 'neutral'}
-          trendValue={stats.produtosBaixoEstoque > 0 ? 'Atenção' : 'Normalizado'}
-          info="Produtos abaixo do mínimo"
-        />
-      </div>
-
-      {/* Seção de gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <SalesEvolutionChart dados={evolucaoVendas} />
-        <PaymentMethodsChart data={vendasPorFormaPagamento} />
-      </div>
-
-      {/* Grid de painéis */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna 1 */}
-        <div className="space-y-6">
-          <RecentSales vendas={vendasRecentes} />
-          <StockAlerts produtos={produtosBaixoEstoque} />
+    <DashboardLayout>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-4 md:mt-0">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-500">Período:</span>
+            </div>
+            <div className="flex space-x-2">
+              <DatePicker
+                date={dataInicio}
+                setDate={setDataInicio}
+                label="De"
+              />
+              <DatePicker
+                date={dataFim}
+                setDate={setDataFim}
+                label="Até"
+              />
+            </div>
+          </div>
         </div>
         
-        {/* Coluna 2 */}
-        <div className="space-y-6">
-          <TopProducts produtos={produtosMaisVendidos} />
+        {/* Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Total de Vendas</p>
+                <p className="text-2xl font-bold">{calcularTotalVendas()}</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <ShoppingCart className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Faturamento</p>
+                <p className="text-2xl font-bold">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(calcularValorTotal())}
+                </p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Ticket Médio</p>
+                <p className="text-2xl font-bold">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(calcularTicketMedio())}
+                </p>
+              </div>
+              <div className="bg-purple-100 p-3 rounded-full">
+                <BarChart2 className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Clientes Atendidos</p>
+                <p className="text-2xl font-bold">{totalClientesComCompras()}</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <Users className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+            
+            {totalProdutosBaixoEstoque() > 0 && (
+              <div className="mt-2 pt-2 border-t flex items-center">
+                <AlertCircle className="h-4 w-4 text-red-500 mr-1" />
+                <p className="text-xs text-red-500">
+                  {totalProdutosBaixoEstoque()} produtos com estoque baixo
+                </p>
+              </div>
+            )}
+          </div>
         </div>
         
-        {/* Coluna 3 */}
-        <div className="space-y-6">
-          <TopCustomers clientes={clientesDestaque} />
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Evolução de Vendas */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
+              Evolução de Vendas
+            </h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={formatarDadosEvolucaoVendas()}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="data" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="vendas"
+                    name="Quantidade"
+                    stroke="#3b82f6"
+                    activeDot={{ r: 8 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="valor"
+                    name="Valor (R$)"
+                    stroke="#10b981"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          {/* Vendas por Forma de Pagamento */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+              Vendas por Forma de Pagamento
+            </h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={formatarDadosVendasPorPagamento()}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {formatarDadosVendasPorPagamento().map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CORES[index % CORES.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => 
+                      new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(Number(value))
+                    }
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+        {/* Top Produtos e Clientes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Produtos */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold mb-4">Top Produtos Vendidos</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2">Produto</th>
+                    <th className="px-4 py-2">Código</th>
+                    <th className="px-4 py-2">Quantidade</th>
+                    <th className="px-4 py-2">Valor Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data?.produtosMaisVendidos?.slice(0, 5).map((produto) => (
+                    <tr key={produto.id} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium">{produto.nome}</td>
+                      <td className="px-4 py-2">{produto.codigo}</td>
+                      <td className="px-4 py-2">{produto.quantidade_total}</td>
+                      <td className="px-4 py-2">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(Number(produto.valor_total))}
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {(!data?.produtosMaisVendidos || data.produtosMaisVendidos.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-center text-gray-500">
+                        Nenhum produto vendido no período
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          {/* Top Clientes */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold mb-4">Top Clientes</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2">Cliente</th>
+                    <th className="px-4 py-2">Total Compras</th>
+                    <th className="px-4 py-2">Valor Total</th>
+                    <th className="px-4 py-2">Última Compra</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data?.clientesDestaque?.slice(0, 5).map((cliente) => (
+                    <tr key={cliente.id} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium">{cliente.nome}</td>
+                      <td className="px-4 py-2">{cliente.total_compras}</td>
+                      <td className="px-4 py-2">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(Number(cliente.valor_total))}
+                      </td>
+                      <td className="px-4 py-2">
+                        {cliente.ultima_compra 
+                          ? format(new Date(cliente.ultima_compra), 'dd/MM/yyyy', { locale: ptBR })
+                          : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {(!data?.clientesDestaque || data.clientesDestaque.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-center text-gray-500">
+                        Nenhum cliente com compras no período
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 } 

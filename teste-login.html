@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Login Supabase</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .result {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    input {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Teste de Login Supabase</h1>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" value="admin@sistema.com">
+    
+    <label for="password">Senha:</label>
+    <input type="password" id="password" value="P@ssw0rd2025">
+    
+    <button onclick="testarLogin()">Testar Login</button>
+    <button onclick="verificarSessao()">Verificar Sessão</button>
+    <button onclick="fazerLogout()">Fazer Logout</button>
+  </div>
+  
+  <h2>Resultado:</h2>
+  <div id="result" class="result">Clique em um botão para testar...</div>
+  
+  <script>
+    // Configuração do Supabase
+    const supabaseUrl = 'https://zigzcautimlfnptevrpt.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppZ3pjYXV0aW1sZm5wdGV2cnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTg0MDgsImV4cCI6MjA2MjAzNDQwOH0.TuaRdvyF99tZV-X2MP1gotMRQU8ekbff8ETOdekN9Kc';
+    
+    // Criar cliente do Supabase
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Função para exibir resultados
+    function mostrarResultado(titulo, dados) {
+      const resultElement = document.getElementById('result');
+      let conteudo = `=== ${titulo} ===\n`;
+      
+      if (typeof dados === 'object') {
+        conteudo += JSON.stringify(dados, null, 2);
+      } else {
+        conteudo += dados;
+      }
+      
+      resultElement.textContent = conteudo;
+    }
+    
+    // Função para testar login
+    async function testarLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      mostrarResultado('Tentando login...', `Email: ${email}`);
+      
+      try {
+        // Verificar conexão da API
+        const responseTest = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey
+          }
+        });
+        
+        mostrarResultado('Status da API', `Status: ${responseTest.status}`);
+        
+        // Tentar fazer login
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          mostrarResultado('Erro no login', error);
+        } else {
+          mostrarResultado('Login bem-sucedido', data);
+          
+          // Buscar dados do usuário
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (userError) {
+            mostrarResultado('Erro ao buscar dados do usuário', userError);
+          } else {
+            mostrarResultado('Dados do usuário', userData);
+          }
+        }
+      } catch (err) {
+        mostrarResultado('Erro inesperado', err.toString());
+      }
+    }
+    
+    // Função para verificar sessão
+    async function verificarSessao() {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          mostrarResultado('Erro ao verificar sessão', error);
+        } else if (data.session) {
+          mostrarResultado('Sessão ativa', data);
+        } else {
+          mostrarResultado('Sem sessão ativa', 'Usuário não está logado');
+        }
+      } catch (err) {
+        mostrarResultado('Erro inesperado', err.toString());
+      }
+    }
+    
+    // Função para fazer logout
+    async function fazerLogout() {
+      try {
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          mostrarResultado('Erro ao fazer logout', error);
+        } else {
+          mostrarResultado('Logout realizado', 'Usuário desconectado com sucesso');
+        }
+      } catch (err) {
+        mostrarResultado('Erro inesperado', err.toString());
+      }
+    }
+  </script>
+</body>
+</html> 

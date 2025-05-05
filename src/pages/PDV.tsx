@@ -138,7 +138,7 @@ function AlertMessage({ type, message }: Alert) {
   )
 }
 
-export function PDV() {
+export default function PDV() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState<Alert | null>(null)

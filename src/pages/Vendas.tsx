@@ -92,7 +92,7 @@ const formasPagamentoIcones: Record<string, JSX.Element> = {
   crediario: <Building2 className="h-5 w-5" />
 }
 
-export function Vendas() {
+export default function Vendas() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [vendas, setVendas] = useState<Venda[]>([])

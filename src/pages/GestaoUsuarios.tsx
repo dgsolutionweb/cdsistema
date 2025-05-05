@@ -15,7 +15,7 @@ interface Usuario {
   bloqueado_em: string | null;
 }
 
-export function GestaoUsuarios() {
+export default function GestaoUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

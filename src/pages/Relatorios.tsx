@@ -144,7 +144,7 @@ const formatCurrency = (value: number | string | null | undefined): string => {
   return utilsFormatCurrency(value);
 }
 
-export function Relatorios() {
+export default function Relatorios() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('vendas')
   const [loading, setLoading] = useState(false)
